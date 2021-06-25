@@ -6,8 +6,8 @@
   register: result
 
 - name: show result
-  debug:
-    var: result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
 
 - name: Add host
   add_host:
