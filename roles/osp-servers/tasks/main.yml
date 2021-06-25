@@ -1,3 +1,78 @@
 ---
+- name: Create instances
+  os_server:
+    cloud: openstack
+    state: "{{ _osp_servers.value.state | default('present') }}"
+    name: "{{ _osp_servers.value.name }}"
+    image: "{{ _osp_servers.value.image }}"
+    key_name: "{{ _osp_servers.value.key_name }}"
+    security_groups: "{{ _osp_servers.value.security_group }}"
+    delete_fip: yes
+    flavor: "{{ _osp_servers.value.flavor }}"
+    nics:
+      - net-name: int_network
+    meta:
+       group: "{{ _osp_servers.value.meta[0].group }}"
+       deployment_name: "{{ _osp_servers.value.meta[0].deployment_name }}"
+    userdata: |
+      #!/bin/bash
+      curl -o /tmp/openstack.pub http://www.opentlc.com/download/ansible_bootcamp/openstack_keys/openstack.pub
+      cat /tmp/openstack.pub >> /home/cloud-user/.ssh/authorized_keys
+  loop: "{{ osp_servers | dict2items }}"
+  loop_control:
+    loop_var: _osp_servers
+    label: "{{ _osp_servers.value.name }}"
 
-# tasks file for osp.servers
+
+- name: Add floating IP to instances
+  os_floating_ip:
+    cloud: openstack
+    state: "{{ _osp_servers.value.state | default('present') }}"
+    reuse: yes
+    server: "{{ _osp_servers.value.name }}"
+    network: ext_network
+    wait: yes
+    timeout: 200
+  loop: "{{ osp_servers | dict2items }}"
+  loop_control:
+    loop_var: _osp_servers
+    label: "{{ _osp_servers.value.name }}"
+  register: result_floating_ips
+
+
+- name: show my register
+  debug:
+    var: result_floating_ips
+
+
+- name: Fetch instance information
+  os_server_info:
+    cloud: openstack
+    region_name: regionOne
+  register: result_os_servers
+
+
+- name: show my register
+  debug:
+    var: result_os_servers
+
+
+- name: Show instance name and IP
+  debug:
+    msg: "{{ item.name }} {{ item.public_v4 }}"
+  loop: "{{ result_os_servers.openstack_servers }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+
+- name: Add hosts to in mem inventory
+  add_host:
+    name: "{{ item.public_v4 }}"
+    group:
+      - "{{ item.metadata.group }}"
+      - "{{ item.metadata.deployment_name }}"
+  changed_when: no
+  loop: "{{ result_os_servers.openstack_servers }}"
+  loop_control:
+    label: "{{ item.name }}"
+
