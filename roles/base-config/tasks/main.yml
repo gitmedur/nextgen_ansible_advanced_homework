@@ -8,43 +8,19 @@
     replace: 'Defaults  !requiretty'
     backup: yes
 
-- name: enable base repos
-  yum_repository:
-    name: "Red Hat Enterprise Linux 7"
-    baseurl: "http://192.168.0.5/repos/rhel-7-server-rpms"
-    gpgcheck: no
-    description: RHEL7 Base repo
-    enabled: yes
-
-- name: enable common repos
-  yum_repository:
-    name: "Red Hat Enterprise Linux 7 Common"
-    baseurl: "http://192.168.0.5/repos/rhel-7-server-rh-common-rpms"
-    gpgcheck: no
-    description: RHEL7 Common repo
-    enabled: yes
-
-- name: enable extra repos
-  yum_repository:
-    name: "Red Hat Enterprise Linux 7 Extras"
-    baseurl: "http://192.168.0.5/repos/rhel-7-server-extras-rpms"
-    gpgcheck: no
-    description: RHEL7 Extra repo
-    enabled: yes
-
-- name: enable optional repos
-  yum_repository:
-    name: "Red Hat Enterprise Linux 7 Optional"
-    baseurl: "http://192.168.0.5/repos/rhel-7-server-optional-rpms"
-    gpgcheck: no
-    description: RHEL7 Optional repo
-    enabled: yes
+- name: enable repos
+  template:
+    src: repos_template.j2
+    dest: /etc/yum.repos.d/internal.repo
+    owner: root
+    group: root
+    mode: 0644 
  
 - name: install base tools and packages
   yum:
     name:
       - httpie
-      - haproxy
       - python-pip
+      - wget
     state: latest
 
