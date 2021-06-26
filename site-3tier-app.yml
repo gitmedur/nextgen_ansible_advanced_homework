@@ -1,3 +1,4 @@
+- import_playbook: in_memory_inventory_aws.yml
 - hosts: workstation
   gather_facts: true
   roles:
